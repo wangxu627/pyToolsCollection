@@ -43,10 +43,14 @@ def savePics(dir, l):
 
 if __name__ == "__main__":   
     r = redis.StrictRedis(host='127.0.0.1', port=6379)
-    for page in xrange(127):
-        for item in xrange(24):
-            url = r.get("page"+str(page) + "item" + str(item) + "href")
-            if(os.path.exists("page"+str(page) + "item" + str(item))):
+    keys = r.keys() 
+    for key in keys:
+        if(key.endswith("_md5")):
+            md5 = key[:-4]
+            print(md5)
+            url = r.get(md5 + "_href")
+            print("key : ", md5 + "_href")
+            if(os.path.exists(md5)):
                 continue
             print("main url : ", url)
             index = 1
@@ -69,7 +73,7 @@ if __name__ == "__main__":
 
                     if(hp.image in pics):
                         print(pics)
-                        savePics("page"+str(page) + "item" + str(item), pics)
+                        savePics(md5, pics)
                         break
                     else:
                         pics.append(hp.image)

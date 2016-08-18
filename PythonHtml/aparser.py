@@ -1,7 +1,7 @@
 from HTMLParser import HTMLParser
 import urllib2
 import redis
-
+import hashlib
 
 class MyHTMLParser(HTMLParser):   
     def __init__(self):   
@@ -9,6 +9,7 @@ class MyHTMLParser(HTMLParser):
         self.links = []
         self.imgs = []
         self.alts = []
+        self.md5 = []
         self.filter = set()
         self.inPins = False
     def handle_starttag(self, tag, attrs):   
@@ -19,9 +20,14 @@ class MyHTMLParser(HTMLParser):
         elif tag == "a":
             if(self.inPins):
                 attrs = dict(attrs)
-                if(not attrs["href"] in self.filter):
+                m = hashlib.md5()
+                m.update(attrs["href"])
+                print("mm : ", m, attrs["href"])
+                sig = m.hexdigest()
+                if(not sig in self.filter):
                     self.links.append(attrs["href"])
-                    self.filter.add(attrs["href"])
+                    self.md5.append(sig)
+                    self.filter.add(sig)
         elif tag == "img":
             if(self.inPins):
                 attrs = dict(attrs)
@@ -51,18 +57,21 @@ if __name__ == "__main__":
         hp.feed(html_code)   
         hp.close()   
 
-        # namePrefix = "img_"
-        # nameIndex = 1
-        # for i in hp.imgs:
-        #     cache = urllib2.urlopen(i).read()
-        #     f = open(namePrefix + str(nameIndex) + ".png", "wb")
-        #     f.write(cache)
-        #     f.close()
-        #     nameIndex += 1
-
         for i in xrange(len(hp.imgs)):
-            r.set("page"+str(page) + "item" + str(i) + "alt", hp.alts[i])
-            r.set("page"+str(page) + "item" + str(i) + "src", hp.imgs[i])
-            r.set("page"+str(page) + "item" + str(i) + "href", hp.links[i])
+            # print("page"+str(page) + "item" + str(i) + "alt", hp.alts[i])
+            # print("page"+str(page) + "item" + str(i) + "src", hp.imgs[i])
+            # print("page"+str(page) + "item" + str(i) + "href", hp.links[i])
+            # print("page"+str(page) + "item" + str(i) + "md5", hp.md5[i])
+
+            # r.set("page"+str(page) + "item" + str(i) + "alt", hp.alts[i])
+            # r.set("page"+str(page) + "item" + str(i) + "src", hp.imgs[i])
+            # r.set("page"+str(page) + "item" + str(i) + "href", hp.links[i])
+            # r.set("page"+str(page) + "item" + str(i) + "md5", hp.md5[i])
+
+            key = hp.md5[i]
+            r.set(key + "_alt",  hp.alts[i])
+            r.set(key + "_src",  hp.imgs[i])
+            r.set(key + "_href", hp.links[i])
+            r.set(key + "_md5",  hp.md5[i])
 
     
